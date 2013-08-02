@@ -120,9 +120,11 @@ int main(int argc, char *argv[])
 	if (!do_alloc())
 		return fprintf(stderr, "alloc crapped itself :(\n"), 1;
 
+	fprintf(stderr, "tallying...\n");
 	for (a1=a2=0; (b=inch(f))!=EOF; a1=a2,a2=b)
 		tally(a1, a2, b);
 
+	fprintf(stderr, "outputting...\n");
 	for (a1=a2=0; ; a1=a2,a2=b) {
 		b = next(a1, a2);
 		fputc(b, stdout);
