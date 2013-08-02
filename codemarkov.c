@@ -64,6 +64,21 @@ int do_alloc(void)
 	return 1;
 }
 
+void do_seed(void)
+{
+	FILE *f = fopen("/dev/urandom", "r");
+	int x;
+
+	if (f == NULL) {
+		x = time(NULL);
+	} else {
+		fread(&x, sizeof(x), 1, f);
+		fclose(f);
+	}
+
+	srand(x);
+}
+
 int main(int argc, char *argv[])
 {
 	FILE *f = stdin;
@@ -74,6 +89,8 @@ int main(int argc, char *argv[])
 		return fprintf(stderr, "forgetting something?\n"), 1;
 
 	delay = atof(argv[1]) * 1000;
+
+	do_seed();
 
 	fprintf(stderr, "allocating...\n");
 	if (!do_alloc())
