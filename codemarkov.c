@@ -2,12 +2,13 @@
 #include <stdio.h>
 
 /* 16 megabytes if unsigned long is 8 bytes */
-unsigned long counts[128][128][128][128];
+unsigned long *counts;
 
 void tally(char a1, char a2, char a3, char b)
 {
-	counts[a1&0x7f][a2&0x7f][a3&0x7f][b&0x7f]++;
-	counts[0][0][0][b]++;
+	a1 &= 0x7f; a2 &= 0x7f; a3 &= 0x7f; b &= 0x7f;
+	counts[a1*128*128*128 + a2*128*128 + a3*128 + b]++;
+	counts[b]++;
 }
 
 char roulette(unsigned long *cnt)
@@ -33,8 +34,8 @@ char next(char a1, char a2, char a3)
 {
 	char n;
 
-	if ((n = roulette(counts[a1][a2][a3])) == -1) {
-		if ((n = roulette(counts[0][0][0])) == -1)
+	if ((n = roulette(&counts[a1*128*128*128+a2*128*128+a3*128])) == -1) {
+		if ((n = roulette(&counts[0])) == -1)
 			abort();
 		return n;
 	}
@@ -57,9 +58,13 @@ int main(int argc, char *argv[])
 	int delay;
 
 	if (argc < 2)
-		return puts("forgetting something?"), 1;
+		return fprintf(stderr, "forgetting something?\n"), 1;
 
 	delay = atof(argv[1]) * 1000;
+
+	fprintf(stderr, "mallocating...\n");
+	if (!(counts = malloc(sizeof(unsigned long)*128*128*128*128)))
+		return fprintf(stderr, "malloc crapped itself :(\n"), 1;
 
 	for (a1=a2=a3=0; (b=inch(f))!=EOF; a1=a2,a2=a3,a3=b)
 		tally(a1, a2, a3, b);
