@@ -1,14 +1,15 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/mman.h>
 
 /* 16 megabytes if unsigned long is 8 bytes */
-unsigned long *counts;
+unsigned long *counts[128];
 
 void tally(char a1, char a2, char a3, char b)
 {
 	a1 &= 0x7f; a2 &= 0x7f; a3 &= 0x7f; b &= 0x7f;
-	counts[a1*128*128*128 + a2*128*128 + a3*128 + b]++;
-	counts[b]++;
+	counts[a1][a2*128*128 + a3*128 + b]++;
+	counts[0][b]++;
 }
 
 char roulette(unsigned long *cnt)
@@ -34,8 +35,8 @@ char next(char a1, char a2, char a3)
 {
 	char n;
 
-	if ((n = roulette(&counts[a1*128*128*128+a2*128*128+a3*128])) == -1) {
-		if ((n = roulette(&counts[0])) == -1)
+	if ((n = roulette(&counts[a1][a2*128*128+a3*128])) == -1) {
+		if ((n = roulette(counts[0])) == -1)
 			abort();
 		return n;
 	}
@@ -51,6 +52,18 @@ int inch(FILE *f)
 	return ((unsigned)c) & 0x7f;
 }
 
+int do_alloc(void)
+{
+	size_t i, sz = 128 * 128 * 128;
+
+	for (i=0; i<128; i++) {
+		if (!(counts[i] = calloc(sz, sizeof(unsigned long))))
+			return 0;
+	}
+
+	return 1;
+}
+
 int main(int argc, char *argv[])
 {
 	FILE *f = stdin;
@@ -62,9 +75,9 @@ int main(int argc, char *argv[])
 
 	delay = atof(argv[1]) * 1000;
 
-	fprintf(stderr, "mallocating...\n");
-	if (!(counts = malloc(sizeof(unsigned long)*128*128*128*128)))
-		return fprintf(stderr, "malloc crapped itself :(\n"), 1;
+	fprintf(stderr, "allocating...\n");
+	if (!do_alloc())
+		return fprintf(stderr, "alloc crapped itself :(\n"), 1;
 
 	for (a1=a2=a3=0; (b=inch(f))!=EOF; a1=a2,a2=a3,a3=b)
 		tally(a1, a2, a3, b);
