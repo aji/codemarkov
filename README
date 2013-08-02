@@ -1,0 +1,3 @@
+usage: codemarkov MSECS
+MSECS = number of ms to wait between output chars
+operates on stdin
